@@ -1,0 +1,12 @@
+---
+- name: restart vsftpd
+  service:
+    name: vsftpd
+    state: restarted
+  become: yes
+
+- name: reload ssh
+  service:
+    name: ssh
+    state: reloaded
+  become: yes

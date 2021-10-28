@@ -1,0 +1,98 @@
+---
+- block:
+  - name: Create directories
+    file:
+      path: " {{  item  }} "
+      state: directory
+      owner: root
+      group: root
+      mode: '0600'
+    loop:
+      - "{{ openssl_certs_path }}"
+      - "{{ openssl_keys_path }}"
+      - "{{ openssl_csrs_path }}"
+
+  - name: Install Python pip
+    apt:
+      name: python3-pip
+      state: present
+      update_cache: yes
+      cache_valid_time: 86400
+
+  - name: Install the requirements
+    pip:
+      state: forcereinstall
+      name:
+        - pyOpenSSL==21.0.0
+
+  - name: Generate a OpenSSL key
+    openssl_privatekey:
+      path: '{{ openssl_keys_path }}/{{ vsftpd_key_file }}'
+      size: 2048
+
+  - name: Generate a OpenSSL csr
+    openssl_csr:
+      path: '{{ openssl_csrs_path }}/{{ vsftpd_csrs_file }}'
+      privatekey_path: '{{ openssl_keys_path }}/{{ vsftpd_key_file }}'
+      country_name: RU
+      organization_name: "{{ organization_name }}"
+      common_name: "{{ openssl_csr_cn }}"
+      subject: "{{ openssl_csr_subject }}"
+      subject_alt_name: "{{ openssl_csr_subject_alt }}"
+
+  - name: Generate a Self Signed OpenSSL certificate
+    openssl_certificate:
+      path: '{{ openssl_certs_path }}/{{ vsftpd_cert_file }}'
+      privatekey_path: '{{ openssl_keys_path }}/{{ vsftpd_key_file }}'
+      csr_path: '{{ openssl_csrs_path }}/{{ vsftpd_csrs_file }}'
+      provider: selfsigned
+
+  - name: Create user
+    user:
+      name: "{{ user_name }}"
+      password: "{{ user_password | password_hash('sha512') }}"
+      shell: /bin/false
+  
+  - name: Deny ftpuser for ssh
+    blockinfile:
+      path: /etc/ssh/sshd_config
+      state: present
+      insertafter: EOF
+      block: |
+        DenyUsers {{ user_name }}
+    notify: reload ssh
+   
+  - name: Add /bin/false for ftpuser
+    blockinfile:
+      path: /etc/shells
+      state: present
+      insertafter: EOF
+      block: |
+        /bin/false
+
+  - name: Install Vsftpd
+    package:
+      name: vsftpd
+      state: present
+    tags: vsftpd
+
+  - name: Install configuration file
+    template:
+      src:   etc_vsftpd_vsftpd.conf.j2
+      dest: /etc/vsftpd.conf
+      mode: '0600'
+    notify: restart vsftpd
+    tags: vsftpd
+
+  - name: Ensure service is started
+    service:
+      name: vsftpd
+      state: started
+      enabled: true
+    tags: vsftpd
+  
+  when:
+    - ansible_facts['architecture'] == 'x86_64'
+    - ansible_facts['distribution'] == 'Ubuntu'
+  become: yes
+...

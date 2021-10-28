@@ -1,0 +1,8 @@
+---
+- hosts: 
+    - vsftpd
+  vars_files:
+    - ./group_vars/vsftpd.yaml
+  roles:
+    - vsftpd
+...

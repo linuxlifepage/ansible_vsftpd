@@ -1,0 +1,14 @@
+---
+vsftpd_key_file: ssl-cert.key
+vsftpd_cert_file: ssl-cert.pem
+vsftpd_csrs_file: ssl-csrs.csr
+openssl_certs_path: /etc/ssl/certs
+openssl_keys_path: /etc/ssl/private
+openssl_csrs_path: /etc/ssl/csrs
+openssl_csr_cn: mysite.com
+openssl_csr_subject: CN=mysite.com,ST=MOW,L=Moscow
+openssl_csr_subject_alt: "DNS:mysite.com,DNS:www.mysite.com"
+organization_name: "MySite"
+user_name: ftpuser
+user_password: YOUR_PASSWORD
+...
