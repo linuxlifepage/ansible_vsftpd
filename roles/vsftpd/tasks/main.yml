@@ -10,7 +10,9 @@
     loop:
       - "{{ openssl_certs_path }}"
       - "{{ openssl_keys_path }}"
-      - "{{ openssl_csrs_path }}"
+  
+  - name: Create csrs directory
+    command: mkdir "{{ openssl_csrs_path }}"
 
   - name: Install Python pip
     apt:
